@@ -1,0 +1,11 @@
+# Core libraries
+streamlit
+chromadb
+sentence-transformers
+langchain
+beautifulsoup4
+requests
+google
+
+# CPU-only PyTorch (no CUDA)
+torch --index-url https://download.pytorch.org/whl/cpu
