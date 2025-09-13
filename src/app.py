@@ -24,6 +24,7 @@ if prompt := st.chat_input("Ask a question about GitLab's Handbook..."):
         with st.spinner("Generating response..."):
             response, sources = st.session_state.chatbot.generate_response(prompt)
         # Add sources HTML
+        st.markdown("**Sources:**", unsafe_allow_html=True)
         if sources:
             gitlab_svg = (
                 '<svg width="20" height="20" viewBox="0 0 1000 1000" style="vertical-align:middle; margin-right:6px;">'

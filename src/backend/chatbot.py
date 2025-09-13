@@ -75,7 +75,6 @@ class Chatbot:
         )
         response_text = response.text.strip() if hasattr(response, "text") else str(response)
         sources = set(meta['url'] for _, meta, _ in reranked[:top_k])
-        print(response_text, sources)
         return response_text, list(sources)
 
 if __name__ == "__main__":
