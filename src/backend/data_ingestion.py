@@ -130,7 +130,7 @@ def crawl_handbook_bfs_and_embed(start_url, max_depth=2, batch_size=100):
     batch_chunks = []
 
     # Setup ChromaDB persistent client
-    client = chromadb.PersistentClient(path="./gitlab-ai-chatbot/src/data/chroma_db2")
+    client = chromadb.PersistentClient(path="./src/data/chroma_db2")
     collection = client.get_or_create_collection("handbook_chunks")
 
     while queue:
@@ -178,7 +178,7 @@ def test_query_chroma(query):
     from chromadb.config import Settings
     print("Loading ChromaDB ...")
     model = SentenceTransformer('all-mpnet-base-v2')
-    client = chromadb.PersistentClient(path="./gitlab-ai-chatbot/src/data/chroma_db2")
+    client = chromadb.PersistentClient(path="./src/data/chroma_db2")
     collection = client.get_or_create_collection("handbook_chunks")
     print("Loaded collection. Querying...")
 

@@ -23,7 +23,7 @@ class Chatbot:
     def __init__(self):
         self.model = SentenceTransformer('all-mpnet-base-v2')
         self.cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-        self.client = chromadb.PersistentClient(path="./gitlab-ai-chatbot/src/data/chroma_db3")
+        self.client = chromadb.PersistentClient(path="./data/chroma_db3")
         self.collection = self.client.get_or_create_collection("handbook_chunks")
         self.genai_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))  # Uses GEMINI_API_KEY from env
 
@@ -75,8 +75,8 @@ class Chatbot:
         )
         response_text = response.text.strip() if hasattr(response, "text") else str(response)
         sources = set(meta['url'] for _, meta, _ in reranked[:top_k])
-        sources_str = "\n".join(sources)
-        return f"{response_text}\n\nSources:\n{sources_str}" 
+        print(response_text, sources)
+        return response_text, list(sources)
 
 if __name__ == "__main__":
     pass
