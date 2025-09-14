@@ -12,20 +12,20 @@ model = SentenceTransformer('all-mpnet-base-v2')
 def get_embedding(text):
     return model.encode(text).tolist()
 
-BASE_URL = "https://handbook.gitlab.com/handbook/"
-DOMAIN = "handbook.gitlab.com"
+# ---- CONFIG ----
+BASE_URL = "https://about.gitlab.com/direction/"
+DOMAIN = "about.gitlab.com"
 MAX_DEPTH = 3
 BATCH_SIZE = 100  # Save progress after every 100 URLs
 
 def is_handbook_url(url):
     parsed = urlparse(url)
+    # Only allow URLs that start with BASE_URL (after normalization)
     return (
-        parsed.netloc == DOMAIN and
-        parsed.path.startswith("/handbook/") and
+        parsed.netloc == urlparse(BASE_URL).netloc and
+        normalize_url(url).startswith(normalize_url(BASE_URL)) and
         not parsed.query
-        and not parsed.path.startswith("/handbook/company/team")
     )
-
 def normalize_url(url):
     url, _ = urldefrag(url)
     parsed = urlparse(url)
@@ -36,7 +36,7 @@ def normalize_url(url):
     )
     return norm.geturl()
 
-def get_subpage_links(url):
+def get_subpage_links(url, url_filter=None):
     try:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
@@ -44,7 +44,7 @@ def get_subpage_links(url):
         links = set()
         for a in soup.find_all("a", href=True):
             full_url = urljoin(url, a["href"])
-            if is_handbook_url(full_url):
+            if url_filter is None or url_filter(full_url):
                 links.add(normalize_url(full_url))
         return links
     except Exception as e:
@@ -94,10 +94,23 @@ def chunk_content(soup, url):
 
     return chunks
 
-
 splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=250)
 
-def save_to_chroma(chunks, collection, chunk_id_start):
+def get_next_chunk_id(collection, id_prefix):
+    # Get all existing IDs with this prefix, return max+1
+    all_ids = collection.get()['ids']
+    max_id = 0
+    for cid in all_ids:
+        if cid.startswith(id_prefix):
+            try:
+                num = int(cid[len(id_prefix):])
+                if num > max_id:
+                    max_id = num
+            except Exception:
+                continue
+    return max_id + 1
+
+def save_to_chroma(chunks, collection, chunk_id_start, id_prefix=""):
     documents = []
     metadatas = []
     ids = []
@@ -107,8 +120,8 @@ def save_to_chroma(chunks, collection, chunk_id_start):
         for j, sub_text in enumerate(sub_chunks):
             full_text = f"Section title: {chunk['section_title']}\n{sub_text}"
             documents.append(full_text)
-            metadatas.append({"section_title": chunk["section_title"], "url": chunk["url"]})
-            ids.append(f"{chunk_id_start + sub_chunk_count}")
+            metadatas.append({"section_title": chunk["section_title"], "url": chunk["url"], "source_prefix": id_prefix})
+            ids.append(f"{id_prefix}{chunk_id_start + sub_chunk_count}")
             sub_chunk_count += 1
     if documents:
         embeddings = model.encode(documents, batch_size=16, show_progress_bar=True)
@@ -120,24 +133,24 @@ def save_to_chroma(chunks, collection, chunk_id_start):
         )
     return chunk_id_start + sub_chunk_count
 
-def crawl_handbook_bfs_and_embed(start_url, max_depth=2, batch_size=100):
+def crawl_and_embed(start_url, url_filter, max_depth=2, batch_size=100, id_prefix=""):
     visited = set()
     queue = deque()
-    if is_handbook_url(start_url):
-        queue.append((normalize_url(start_url), 0))
-    chunk_id = 1
+    queue.append((normalize_url(start_url), 0))
+    # Setup ChromaDB persistent client
+    client = chromadb.PersistentClient(path="./data/chroma_db2")
+    collection = client.get_or_create_collection("handbook_chunks")
+    chunk_id = get_next_chunk_id(collection, id_prefix)
     url_counter = 0
     batch_chunks = []
-
-    # Setup ChromaDB persistent client
-    client = chromadb.PersistentClient(path="./src/data/chroma_db2")
-    collection = client.get_or_create_collection("handbook_chunks")
 
     while queue:
         url, depth = queue.popleft()
         if url in visited or depth > max_depth:
             continue
-        print(f"[crawl_handbook] Crawling: {url} (depth {depth})")
+        if url_filter and not url_filter(url):
+            continue
+        print(f"[crawl] Crawling: {url} (depth {depth})")
         visited.add(url)
         url_counter += 1
         try:
@@ -147,51 +160,44 @@ def crawl_handbook_bfs_and_embed(start_url, max_depth=2, batch_size=100):
             page_chunks = chunk_content(soup, url)
             batch_chunks.extend(page_chunks)
             if depth < max_depth:
-                subpages = get_subpage_links(url)
+                subpages = get_subpage_links(url, url_filter)
                 for sub_url in subpages:
                     if sub_url not in visited:
                         queue.append((sub_url, depth + 1))
             time.sleep(0.5)
         except Exception as e:
-            print(f"[crawl_handbook] Error crawling {url}: {e}")
+            print(f"[crawl] Error crawling {url}: {e}")
 
         # Save to ChromaDB every batch_size URLs
         if url_counter % batch_size == 0:
             print(f"[chroma] Saving batch at URL count: {url_counter}")
-            chunk_id = save_to_chroma(batch_chunks, collection, chunk_id)
+            chunk_id = save_to_chroma(batch_chunks, collection, chunk_id, id_prefix=id_prefix)
             batch_chunks = []
 
     # Save any remaining chunks
     if batch_chunks:
         print(f"[chroma] Saving final batch at URL count: {url_counter}")
-        save_to_chroma(batch_chunks, collection, chunk_id)
+        save_to_chroma(batch_chunks, collection, chunk_id, id_prefix=id_prefix)
 
 def main():
-    print("Starting handbook crawl and embedding (BFS)...")
-    crawl_handbook_bfs_and_embed(BASE_URL, MAX_DEPTH, BATCH_SIZE)
-    print("Crawling and embedding complete. Data is in ChromaDB.")
-
-
-def test_query_chroma(query):
-    from sentence_transformers import SentenceTransformer
-    import chromadb
-    from chromadb.config import Settings
-    print("Loading ChromaDB ...")
-    model = SentenceTransformer('all-mpnet-base-v2')
-    client = chromadb.PersistentClient(path="./src/data/chroma_db2")
-    collection = client.get_or_create_collection("handbook_chunks")
-    print("Loaded collection. Querying...")
-
-    query_emb = model.encode([query]).tolist()
-    results = collection.query(
-        query_embeddings=query_emb,
-        n_results=10,
-        include=['documents', 'metadatas', 'distances']
+    # Example usage for GitLab
+    crawl_and_embed(
+        start_url=BASE_URL,
+        url_filter=is_handbook_url,
+        max_depth=MAX_DEPTH,
+        batch_size=BATCH_SIZE,
+        id_prefix="gitlab_"
     )
-    for doc, meta, dist in zip(results['documents'][0], results['metadatas'][0], results['distances'][0]):
-        print(f"\nSection: {meta['section_title']}\nURL: {meta['url']}\nScore: {dist:.4f}\nText: {doc}...")
+    # Example usage for another site (uncomment and edit as needed)
+    # def is_docs_url(url):
+    #     return urlparse(url).netloc == "docs.example.com"
+    # crawl_and_embed(
+    #     start_url="https://docs.example.com/",
+    #     url_filter=is_docs_url,
+    #     max_depth=2,
+    #     batch_size=100,
+    #     id_prefix="example_"
+    # )
 
 if __name__ == "__main__":
-    #main()
-    test_query_chroma("Examples of Potentially GitLab Sensitive Topics")
-
+    main()

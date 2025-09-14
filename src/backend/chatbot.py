@@ -23,7 +23,7 @@ class Chatbot:
     def __init__(self):
         self.model = SentenceTransformer('all-mpnet-base-v2')
         self.cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-        self.client = chromadb.PersistentClient(path="./data/chroma_db3")
+        self.client = chromadb.PersistentClient(path="./data/chroma_db2")
         self.collection = self.client.get_or_create_collection("handbook_chunks")
         self.genai_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))  # Uses GEMINI_API_KEY from env
 
@@ -63,7 +63,7 @@ class Chatbot:
 
         prompt = (
             "You are a helpful assistant answering questions using the GitLab Handbook. "
-            "Use only the provided context to answer. If the answer is not in the context, say you don't know.\n\n" \
+            "Use only the provided context to answer. If the answer is not in the context, just respond with \"I don't know.\"\n\n"
             "Do not repeat the context verbatim. Summarize and synthesize the information.\n\n"
             f"Context:\n{context}\n"
             f"User question: {user_query}\n"
