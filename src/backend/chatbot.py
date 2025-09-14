@@ -69,12 +69,16 @@ class Chatbot:
             f"User question: {user_query}\n"
             "Answer:"
         )
-
-        response = self.genai_client.models.generate_content(
-            model="gemini-2.5-flash", contents=prompt
-        )
-        response_text = response.text.strip() if hasattr(response, "text") else str(response)
-        sources = set(meta['url'] for _, meta, _ in reranked[:top_k])
+        try:
+            response = self.genai_client.models.generate_content(
+                model="gemini-2.5-flash", contents=prompt
+            )
+            response_text = response.text.strip() if hasattr(response, "text") else str(response)
+            sources = set(meta['url'] for _, meta, _ in reranked[:top_k])
+        except Exception as e:
+            print(e)
+            response_text = "Sorry, I couldn't generate a response."
+            sources = set()
         return response_text, list(sources)
 
 if __name__ == "__main__":
