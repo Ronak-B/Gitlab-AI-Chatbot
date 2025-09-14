@@ -23,7 +23,7 @@ class Chatbot:
     def __init__(self):
         self.model = SentenceTransformer('all-mpnet-base-v2')
         self.cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-        self.client = chromadb.PersistentClient(path="./data/chroma_db2")
+        self.client = chromadb.PersistentClient(path="./data/chroma_db")
         self.collection = self.client.get_or_create_collection("handbook_chunks")
         self.genai_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))  # Uses GEMINI_API_KEY from env
 

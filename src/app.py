@@ -48,13 +48,13 @@ for message in st.session_state.messages:
         st.markdown(message["content"], unsafe_allow_html=True)
 
 # --- Follow-up Suggestions ---
-st.markdown("**Quick questions you can try:**")
-cols = st.columns(3)
-for i, q in enumerate(st.session_state.suggestions):
-    disabled = st.session_state.waiting  # disable while bot is thinking
-    if cols[i].button(q, key=f"suggest-{i}", disabled=disabled):
-        st.session_state.pending_question = q
-        st.rerun()
+if not st.session_state.waiting:  # only show suggestions if bot is not thinking
+    st.markdown("**Quick questions you can try:**")
+    cols = st.columns(3)
+    for i, q in enumerate(st.session_state.suggestions):
+        if cols[i].button(q, key=f"suggest-{i}"):
+            st.session_state.pending_question = q
+            st.rerun()
 
 # --- Chat Input ---
 prompt = st.chat_input("Ask a question about GitLab's Handbook...",
