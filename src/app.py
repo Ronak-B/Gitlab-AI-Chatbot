@@ -1,23 +1,13 @@
+import random
 import streamlit as st
 from backend.chatbot import Chatbot
-import random
+from backend.config import FOLLOWUP_QUESTIONS, GITLAB_SVG
+from utils.helpers import record_feedback
 
-FOLLOWUP_QUESTIONS = [
-    "What are GitLab's core values?",
-    "How does GitLab support remote work?",
-    "Where can I find information about paid time off?",
-    "How does performance review work at GitLab?",
-    "What is the process for requesting time off?",
-    "How does GitLab handle onboarding?",
-    "What are the main communication tools at GitLab?",
-    "How does GitLab support diversity and inclusion?",
-    "What is the handbook's policy on security?",
-    "How can I contribute to the GitLab Handbook?",
-]
-
+# --- Streamlit App Configuration ---
 st.set_page_config(page_title="GitLab AI Chatbot", page_icon="🤖", layout="centered")
 st.title("🤖 GitLab AI Chatbot")
-st.markdown("Ask questions about GitLab's Handbook. Powered by Google Gemini and ChromaDB.")
+st.markdown("Ask questions about GitLab's Handbook. Powered by Google Gemini.")
 
 # --- Session State ---
 if "chatbot" not in st.session_state:
@@ -30,22 +20,66 @@ if "suggestions" not in st.session_state:
     st.session_state.suggestions = random.sample(FOLLOWUP_QUESTIONS, 3)
 if "waiting" not in st.session_state:
     st.session_state.waiting = False
+if "last_bot_response" not in st.session_state:
+    st.session_state.last_bot_response = ""
+if "last_user_question" not in st.session_state:
+    st.session_state.last_user_question = ""
 
-# --- Helper for bot call ---
 def append_assistant_response(prompt):
+    """
+    Call the chatbot to get a response for the user prompt.
+    """
+
     response, sources = st.session_state.chatbot.generate_response(prompt)
+    st.session_state.last_bot_response = response
+    st.session_state.last_user_question = prompt
     if sources:
+        gitlab_svg = GITLAB_SVG
         links = ", &nbsp;".join(
             f'<a href="{url}" target="_blank" style="color:#1a73e8; font-weight:bold; text-decoration:underline;">{i+1}</a>'
             for i, url in enumerate(sources)
         )
-        response += f"<br><b>Sources:</b> {links}"
-    st.session_state.messages.append({"role": "assistant", "content": response})
+        response += f"<br><b>{gitlab_svg} Sources:&nbsp;</b> {links}"
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": response,
+        "feedback": None
+    })
+
 
 # --- Render chat history ---
-for message in st.session_state.messages:
+for idx, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
         st.markdown(message["content"], unsafe_allow_html=True)
+        if (
+            message["role"] == "assistant"
+            and message.get("content") != "⏳ _Thinking..._"
+            and message.get("feedback") is None
+        ):
+            cols = st.columns([1, 1, 3, 3])
+            with cols[0]:
+                if st.button("👍", key=f"thumbs_up_{idx}"):
+                    st.session_state.messages[idx]["feedback"] = "up"
+                    record_feedback(
+                        st.session_state.last_user_question,
+                        st.session_state.last_bot_response,
+                        "up"
+                    )
+                    st.rerun()
+            with cols[1]:
+                if st.button("👎", key=f"thumbs_down_{idx}"):
+                    st.session_state.messages[idx]["feedback"] = "down"
+                    record_feedback(
+                        st.session_state.last_user_question,
+                        st.session_state.last_bot_response,
+                        "down"
+                    )   
+                    st.rerun()
+        elif message.get("feedback") == "up":
+            st.markdown("**Feedback:** 👍")
+        elif message.get("feedback") == "down":
+            st.markdown("**Feedback:** 👎")
+
 
 # --- Follow-up Suggestions ---
 if not st.session_state.waiting:  # only show suggestions if bot is not thinking
@@ -76,7 +110,6 @@ if st.session_state.pending_question:
         st.rerun()
 
     # Step 2: Replace placeholder with actual response
-    # Remove last message (the "Thinking..." one)
     if st.session_state.messages and st.session_state.messages[-1]["content"] == "⏳ _Thinking..._":
         st.session_state.messages.pop()
 

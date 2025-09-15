@@ -1,10 +1,9 @@
 import requests
+import time
+import chromadb
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse, urldefrag
-import time
 from collections import deque
-import chromadb
-from chromadb.config import Settings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 
@@ -13,20 +12,19 @@ def get_embedding(text):
     return model.encode(text).tolist()
 
 # ---- CONFIG ----
-BASE_URL = "https://about.gitlab.com/direction/"
-DOMAIN = "about.gitlab.com"
+BASE_URLS = [
+    ("https://handbook.gitlab.com/", "handbook_"),
+    ("https://about.gitlab.com/direction/", "direction_"),
+]
 MAX_DEPTH = 3
 BATCH_SIZE = 100  # Save progress after every 100 URLs
 
-def is_handbook_url(url):
-    parsed = urlparse(url)
-    # Only allow URLs that start with BASE_URL (after normalization)
-    return (
-        parsed.netloc == urlparse(BASE_URL).netloc and
-        normalize_url(url).startswith(normalize_url(BASE_URL)) and
-        not parsed.query
-    )
 def normalize_url(url):
+    """
+    Normalize URL by removing fragments, lowercasing scheme and netloc,
+    and stripping trailing slashes.
+    """
+
     url, _ = urldefrag(url)
     parsed = urlparse(url)
     norm = parsed._replace(
@@ -36,7 +34,24 @@ def normalize_url(url):
     )
     return norm.geturl()
 
+def is_allowed_url(url, base_url):
+    """
+    Check if the URL is within the same domain and path as the base_url,
+    and has no query parameters.
+    """
+
+    parsed = urlparse(url)
+    return (
+        parsed.netloc == urlparse(base_url).netloc and
+        normalize_url(url).startswith(normalize_url(base_url)) and
+        not parsed.query
+    )
+
 def get_subpage_links(url, url_filter=None):
+    """
+    Fetch the page and extract all valid subpage links.
+    """
+
     try:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
@@ -52,12 +67,20 @@ def get_subpage_links(url, url_filter=None):
         return set()
 
 def extract_main_content(soup):
+    """
+    Extract the main content area from the soup.
+    """
+
     main = soup.find("main") or soup.find("article")
     if not main:
         main = soup
     return main
 
 def chunk_content(soup, url):
+    """
+    Chunk the content of the page into smaller sections.
+    """
+
     main = extract_main_content(soup)
     chunks = []
 
@@ -97,7 +120,10 @@ def chunk_content(soup, url):
 splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=250)
 
 def get_next_chunk_id(collection, id_prefix):
-    # Get all existing IDs with this prefix, return max+1
+    """
+    Get the next available chunk ID with the given prefix.
+    """
+
     all_ids = collection.get()['ids']
     max_id = 0
     for cid in all_ids:
@@ -111,6 +137,10 @@ def get_next_chunk_id(collection, id_prefix):
     return max_id + 1
 
 def save_to_chroma(chunks, collection, chunk_id_start, id_prefix=""):
+    """
+    Save the list of chunks to ChromaDB collection.
+    """
+
     documents = []
     metadatas = []
     ids = []
@@ -134,6 +164,11 @@ def save_to_chroma(chunks, collection, chunk_id_start, id_prefix=""):
     return chunk_id_start + sub_chunk_count
 
 def crawl_and_embed(start_url, url_filter, max_depth=2, batch_size=100, id_prefix=""):
+    """
+    Crawl the website starting from start_url up to max_depth using BFS.
+    Extract and chunk content, then embed and store in ChromaDB.
+    """
+
     visited = set()
     queue = deque()
     queue.append((normalize_url(start_url), 0))
@@ -164,7 +199,7 @@ def crawl_and_embed(start_url, url_filter, max_depth=2, batch_size=100, id_prefi
                 for sub_url in subpages:
                     if sub_url not in visited:
                         queue.append((sub_url, depth + 1))
-            time.sleep(0.5)
+            time.sleep(0.5) # Be polite with a short delay
         except Exception as e:
             print(f"[crawl] Error crawling {url}: {e}")
 
@@ -180,24 +215,15 @@ def crawl_and_embed(start_url, url_filter, max_depth=2, batch_size=100, id_prefi
         save_to_chroma(batch_chunks, collection, chunk_id, id_prefix=id_prefix)
 
 def main():
-    # Example usage for GitLab
-    crawl_and_embed(
-        start_url=BASE_URL,
-        url_filter=is_handbook_url,
-        max_depth=MAX_DEPTH,
-        batch_size=BATCH_SIZE,
-        id_prefix="gitlab_"
-    )
-    # Example usage for another site (uncomment and edit as needed)
-    # def is_docs_url(url):
-    #     return urlparse(url).netloc == "docs.example.com"
-    # crawl_and_embed(
-    #     start_url="https://docs.example.com/",
-    #     url_filter=is_docs_url,
-    #     max_depth=2,
-    #     batch_size=100,
-    #     id_prefix="example_"
-    # )
+    for base_url, id_prefix in BASE_URLS:
+        print(f"\n--- Starting crawl for {base_url} ---\n")
+        crawl_and_embed(
+            start_url=base_url,
+            url_filter=lambda url, bu=base_url: is_allowed_url(url, bu),
+            max_depth=MAX_DEPTH,
+            batch_size=BATCH_SIZE,
+            id_prefix=id_prefix
+        )
 
 if __name__ == "__main__":
     main()
