@@ -5,7 +5,7 @@ sentence-transformers
 langchain
 beautifulsoup4
 requests
-google
+google-genai
 
 # CPU-only PyTorch (no CUDA)
 torch --index-url https://download.pytorch.org/whl/cpu
