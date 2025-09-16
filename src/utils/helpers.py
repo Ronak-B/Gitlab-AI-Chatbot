@@ -6,7 +6,7 @@ import requests
 import streamlit as st
 import string
 import zipfile
-from backend.config import CHROMA_DB_PATH, CHROMA_DB_ZIP_URL
+from backend.config import CHROMA_DB_PATH, CHROMA_DB_ZIP_URL, MAX_QUERY_LENGTH
 
 def ensure_chroma_db():
     db_dir = os.path.abspath(CHROMA_DB_PATH)
@@ -61,3 +61,16 @@ def record_feedback(question, answer, feedback):
     with open("feedback.csv", "a", newline='', encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow([question, answer, feedback])
+
+def is_valid_query(query):
+    """
+    Validate the user query.
+    """
+
+    if not query or not query.strip():
+        st.error("Please enter a question.")
+        return False
+    if len(query) > MAX_QUERY_LENGTH:
+        st.error(f"Question too long (max {MAX_QUERY_LENGTH} characters).")
+        return False
+    return True

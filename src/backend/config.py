@@ -1,6 +1,8 @@
 # ChromaDB settings
 import os
 
+MAX_QUERY_LENGTH = 256
+
 CHROMA_DB_ZIP_URL = "https://drive.google.com/uc?export=download&id=1h01HNP2jsbYPL4x-CYfbt_ssnB5Jcex6"
 CHROMA_DB_PATH = os.environ.get("CHROMA_DB_PATH", "./data/chroma_db")
 COLLECTION_NAME = "handbook_chunks"

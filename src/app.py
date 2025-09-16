@@ -2,8 +2,7 @@ import random
 import streamlit as st
 from backend.chatbot import Chatbot
 from backend.config import FOLLOWUP_QUESTIONS, GITLAB_SVG
-from utils.helpers import ensure_chroma_db, record_feedback
-
+from utils.helpers import ensure_chroma_db, record_feedback, is_valid_query
 
 ensure_chroma_db()
 
@@ -11,6 +10,7 @@ ensure_chroma_db()
 st.set_page_config(page_title="GitLab AI Chatbot", page_icon="🤖", layout="centered")
 st.title("🤖 GitLab AI Chatbot")
 st.markdown("Ask questions about GitLab's Handbook. Powered by Google Gemini.")
+
 
 # --- Session State ---
 if "chatbot" not in st.session_state:
@@ -32,7 +32,6 @@ def append_assistant_response(prompt):
     """
     Call the chatbot to get a response for the user prompt.
     """
-
     response, sources = st.session_state.chatbot.generate_response(prompt)
     st.session_state.last_bot_response = response
     st.session_state.last_user_question = prompt
@@ -48,7 +47,6 @@ def append_assistant_response(prompt):
         "content": response,
         "feedback": None
     })
-
 
 # --- Render chat history ---
 for idx, message in enumerate(st.session_state.messages):
@@ -85,7 +83,6 @@ for idx, message in enumerate(st.session_state.messages):
         elif message.get("feedback") == "down":
             st.markdown("**Feedback:** 👎")
 
-
 # --- Follow-up Suggestions ---
 if not st.session_state.waiting:  # only show suggestions if bot is not thinking
     st.markdown("**Quick questions you can try:**")
@@ -105,6 +102,12 @@ if prompt:
 # --- Process Pending Question ---
 if st.session_state.pending_question:
     q = st.session_state.pending_question
+    # --- Validate Query ---
+    if not is_valid_query(q):
+        st.session_state.pending_question = None
+        st.session_state.user_message_added = False
+        st.session_state.waiting = False
+        st.stop()
     # Step 1: Add user message first if not already added
     if not st.session_state.get("user_message_added", False):
         st.session_state.messages.append({"role": "user", "content": q})
