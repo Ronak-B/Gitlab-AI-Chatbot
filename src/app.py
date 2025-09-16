@@ -2,7 +2,10 @@ import random
 import streamlit as st
 from backend.chatbot import Chatbot
 from backend.config import FOLLOWUP_QUESTIONS, GITLAB_SVG
-from utils.helpers import record_feedback
+from utils.helpers import ensure_chroma_db, record_feedback
+
+
+ensure_chroma_db()
 
 # --- Streamlit App Configuration ---
 st.set_page_config(page_title="GitLab AI Chatbot", page_icon="🤖", layout="centered")
@@ -56,25 +59,27 @@ for idx, message in enumerate(st.session_state.messages):
             and message.get("content") != "⏳ _Thinking..._"
             and message.get("feedback") is None
         ):
-            cols = st.columns([1, 1, 3, 3])
+            cols = st.columns([1, 10])
             with cols[0]:
-                if st.button("👍", key=f"thumbs_up_{idx}"):
-                    st.session_state.messages[idx]["feedback"] = "up"
-                    record_feedback(
-                        st.session_state.last_user_question,
-                        st.session_state.last_bot_response,
-                        "up"
-                    )
-                    st.rerun()
-            with cols[1]:
-                if st.button("👎", key=f"thumbs_down_{idx}"):
-                    st.session_state.messages[idx]["feedback"] = "down"
-                    record_feedback(
-                        st.session_state.last_user_question,
-                        st.session_state.last_bot_response,
-                        "down"
-                    )   
-                    st.rerun()
+                c1, c2 = st.columns(2, gap="medium")
+                with c1:
+                    if st.button("👍", key=f"thumbs_up_{idx}", use_container_width=True):
+                        st.session_state.messages[idx]["feedback"] = "up"
+                        record_feedback(
+                            st.session_state.last_user_question,
+                            st.session_state.last_bot_response,
+                            "up"
+                        )
+                        st.rerun()
+                with c2:
+                    if st.button("👎", key=f"thumbs_down_{idx}", use_container_width=True):
+                        st.session_state.messages[idx]["feedback"] = "down"
+                        record_feedback(
+                            st.session_state.last_user_question,
+                            st.session_state.last_bot_response,
+                            "down"
+                        ) 
+                        st.rerun()
         elif message.get("feedback") == "up":
             st.markdown("**Feedback:** 👍")
         elif message.get("feedback") == "down":
