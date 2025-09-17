@@ -60,9 +60,9 @@ streamlit run app.py
 ## Features
 
 - **Data Retrieval & Processing**: Crawls, chunks, and embeds content from GitLab's Handbook and Direction pages using sentence-transformers and stores it in ChromaDB. (done using data_ingestion.py)
-- **Generative AI Chatbot**: Uses Google Gemini to synthesize answers from retrieved context.
-- **Semantic Search**: Reranks results using a cross-encoder for improved relevance.
+- **Semantic Search**: Finds matching chunks for user query after embedding & Reranks results using a cross-encoder for improved relevance.
 - **User Interface**: Clean Streamlit UI
+- **Generative AI Chatbot**: Uses Google Gemini to synthesize answers from retrieved context.
 - **Transparency**: Shows source links for each generated answer.
 - **Feedback System**: Users can rate answers with thumbs up/down, stored for future analysis.
 
