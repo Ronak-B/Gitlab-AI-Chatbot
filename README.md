@@ -1,24 +1,21 @@
-
-
 # GitLab AI Chatbot
 
 ## Overview
-The GitLab AI Chatbot is a generative AI application designed to retrieve and provide information from GitLab's Handbook and Direction pages. It utilizes a backend architecture for data retrieval and processing, while the frontend is built using Streamlit to create an interactive user interface.
+The GitLab AI Chatbot is a generative AI application designed to retrieve and provide information from GitLab's Handbook and Direction pages. It uses a retrieval-augmented generation (RAG) pipeline with ChromaDB and sentence-transformers for semantic search, and Google Gemini for answer synthesis. The frontend is built using Streamlit for an interactive, user-friendly experience.
 
 ## Project Structure
 ```
 gitlab-ai-chatbot
+├── .env
 ├── src
 │   ├── backend
 │   │   ├── __init__.py
-│   │   ├── retrieval.py
+│   │   ├── data_ingestion.py
 │   │   ├── chatbot.py
 │   │   └── config.py
-│   ├── frontend
-│   │   ├── __init__.py
-│   │   └── app.py
+│   ├── app.py
 │   ├── data
-│   │   └── README.md
+│   │   └── (chroma_db/ - downloaded at runtime)
 │   └── utils
 │       └── helpers.py
 ├── requirements.txt
@@ -26,31 +23,61 @@ gitlab-ai-chatbot
 └── .gitignore
 ```
 
-## Installation
-To set up the project, clone the repository and install the required dependencies:
+## Quick Start
 
+### 1. Clone and Install
 ```bash
 git clone <repository-url>
-cd gitlab-ai-chatbot
+cd src
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Usage
-To run the Streamlit application, execute the following command:
-
-```bash
-streamlit run src/frontend/app.py
+### 2. Environment Variables
+Create a `.env` file in the project root and add your Gemini API key:
+```
+GEMINI_API_KEY=your-gemini-api-key
 ```
 
-This will start the application, allowing users to interact with the chatbot and retrieve information from GitLab's resources.
+### 3. Download ChromaDB
+
+On first run, the app will automatically download and extract the ChromaDB database from Google Drive if not present in `src/data/chroma_db`.
+
+**If the automatic download fails:**  
+1. Download the zip file manually from [Google Drive link]("https://drive.google.com/uc?export=download&id=1h01HNP2jsbYPL4x-CYfbt_ssnB5Jcex6").
+2. Place the downloaded `chroma_db.zip` file inside the `src/data` directory.
+3. Extract it:
+   ```bash
+   cd src/data
+   unzip chroma_db.zip
+
+### 4. Run the App
+```bash
+cd src
+streamlit run app.py
+```
 
 ## Features
-- **Data Retrieval**: The backend retrieves and processes data from GitLab's Handbook and Direction pages.
-- **Generative AI**: The chatbot generates responses based on user queries using a trained AI model.
-- **User Interface**: A simple and intuitive interface built with Streamlit for easy interaction.
 
-## Contributing
-Contributions are welcome! Please submit a pull request or open an issue for any enhancements or bug fixes.
+- **Data Retrieval & Processing**: Crawls, chunks, and embeds content from GitLab's Handbook and Direction pages using sentence-transformers and stores it in ChromaDB.
+- **Generative AI Chatbot**: Uses Google Gemini to synthesize answers from retrieved context.
+- **Semantic Search**: Reranks results using a cross-encoder for improved relevance.
+- **User Interface**: Clean Streamlit UI
+- **Transparency**: Shows source links for each generated answer.
+- **Feedback System**: Users can rate answers with thumbs up/down, stored for future analysis.
+- **Product Thinking**: Designed to help employees quickly find policies, onboarding info, and other handbook content.
 
-## License
-This project is licensed under the MIT License. See the LICENSE file for more details.
+## Environment Variables
+
+| Variable         | Purpose                       |
+|------------------|------------------------------|
+| GEMINI_API_KEY   | Google Gemini API access      |
+
+
+## Screenshots
+
+*(Add screenshots or GIFs of the chat UI, feedback buttons, and error handling here)*
+
+## Future Work
+- Future enhancements: smarter follow-ups, analytics dashboard, advanced moderation.
