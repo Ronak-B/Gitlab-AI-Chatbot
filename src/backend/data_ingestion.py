@@ -146,7 +146,7 @@ def save_to_chroma(chunks, collection, chunk_id_start, id_prefix=""):
     ids = []
     sub_chunk_count = 0
     for i, chunk in enumerate(chunks):
-        sub_chunks = [chunk["text"]]
+        sub_chunks = splitter.split_text(chunk["text"])
         for j, sub_text in enumerate(sub_chunks):
             full_text = f"Section title: {chunk['section_title']}\n{sub_text}"
             documents.append(full_text)
