@@ -39,6 +39,15 @@ FOLLOWUP_QUESTIONS = [
     "What are the future plans and vision for gitlab",
 ]
 
+LLM_PROMPT_TEMPLATE = (
+    "You are a helpful assistant answering questions using the GitLab Handbook. "
+    "Use only the provided context to answer. If the answer is not in the context, just respond with \"I don't know.\"\n\n"
+    "Do not repeat the context verbatim. Summarize and synthesize the information.\n\n"
+    "Context:\n{context}\n"
+    "User question: {question}\n"
+    "Answer:"
+)
+
 
 SVG_PATH = os.path.join(os.path.dirname(__file__), "../assets/gitlab.svg")
 with open(SVG_PATH, "r") as f:
