@@ -53,27 +53,25 @@ def render_feedback_buttons(idx, message):
     Render thumbs up and thumbs down feedback buttons.
     """
 
-    cols = st.columns([1, 10])
+    cols = st.columns([1, 1, 3, 3])
     with cols[0]:
-        c1, c2 = st.columns(2, gap="medium")
-        with c1:
-            if st.button("👍", key=f"thumbs_up_{idx}", use_container_width=True):
-                st.session_state.messages[idx]["feedback"] = "up"
-                record_feedback(
-                    st.session_state.last_user_question,
-                    st.session_state.last_bot_response,
-                    "up"
-                )
-                st.rerun()
-        with c2:
-            if st.button("👎", key=f"thumbs_down_{idx}", use_container_width=True):
-                st.session_state.messages[idx]["feedback"] = "down"
-                record_feedback(
-                    st.session_state.last_user_question,
-                    st.session_state.last_bot_response,
-                    "down"
-                )
-                st.rerun()
+        if st.button("👍", key=f"thumbs_up_{idx}"):
+            st.session_state.messages[idx]["feedback"] = "up"
+            record_feedback(
+                st.session_state.last_user_question,
+                st.session_state.last_bot_response,
+                "up"
+            )
+            st.rerun()
+    with cols[1]:
+        if st.button("👎", key=f"thumbs_down_{idx}"):
+            st.session_state.messages[idx]["feedback"] = "down"
+            record_feedback(
+                st.session_state.last_user_question,
+                st.session_state.last_bot_response,
+                "down"
+            )   
+            st.rerun()
 
 def render_chat_history():
     """

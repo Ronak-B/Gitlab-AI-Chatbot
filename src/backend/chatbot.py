@@ -54,7 +54,10 @@ class Chatbot:
         Rerank documents using a cross-encoder and title matching.
         """
         if not docs or not metas:
-            return [], []
+            return (
+                "Sorry, I couldn't find any relevant information for your question.",
+                []
+            )
 
         pairs = [(user_query, doc) for doc in docs]
         scores = self.cross_encoder.predict(pairs)
@@ -85,6 +88,13 @@ class Chatbot:
                 model=GEMINI_MODEL, contents=prompt
             )
             response_text = response.text.strip() if hasattr(response, "text") else str(response)
+
+            if "i don't know" in response_text.lower():
+                return (
+                    "Sorry, I couldn't find an answer to your question in my knowledge base.",
+                    []
+                )
+    
             sources = list({meta.get('url') for _, meta, _ in context_docs if meta.get('url')})
             return response_text, sources
         except Exception as e:
