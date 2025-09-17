@@ -28,7 +28,6 @@ gitlab-ai-chatbot
 ### 1. Clone and Install
 ```bash
 git clone <repository-url>
-cd src
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -45,7 +44,7 @@ GEMINI_API_KEY=your-gemini-api-key
 On first run, the app will automatically download and extract the ChromaDB database from Google Drive if not present in `src/data/chroma_db`.
 
 **If the automatic download fails:**  
-1. Download the zip file manually from [Google Drive link]("https://drive.google.com/uc?export=download&id=1h01HNP2jsbYPL4x-CYfbt_ssnB5Jcex6").
+1. Download the zip file manually from [Google Drive link](https://drive.google.com/uc?export=download&id=1h01HNP2jsbYPL4x-CYfbt_ssnB5Jcex6)
 2. Place the downloaded `chroma_db.zip` file inside the `src/data` directory.
 3. Extract it:
    ```bash
@@ -60,13 +59,13 @@ streamlit run app.py
 
 ## Features
 
-- **Data Retrieval & Processing**: Crawls, chunks, and embeds content from GitLab's Handbook and Direction pages using sentence-transformers and stores it in ChromaDB.
+- **Data Retrieval & Processing**: Crawls, chunks, and embeds content from GitLab's Handbook and Direction pages using sentence-transformers and stores it in ChromaDB. (done using data_ingestion.py)
 - **Generative AI Chatbot**: Uses Google Gemini to synthesize answers from retrieved context.
 - **Semantic Search**: Reranks results using a cross-encoder for improved relevance.
 - **User Interface**: Clean Streamlit UI
 - **Transparency**: Shows source links for each generated answer.
 - **Feedback System**: Users can rate answers with thumbs up/down, stored for future analysis.
-- **Product Thinking**: Designed to help employees quickly find policies, onboarding info, and other handbook content.
+
 
 ## Environment Variables
 
