@@ -23,8 +23,8 @@ class Chatbot:
     """
 
     def __init__(self):
-        self.model = SentenceTransformer('all-mpnet-base-v2')
-        self.cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+        self.model = SentenceTransformer('all-mpnet-base-v2', device="cpu")
+        self.cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', device="cpu")
         self.client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         self.collection = self.client.get_or_create_collection(COLLECTION_NAME)
         self.genai_client = genai.Client(api_key=os.getenv(GEMINI_API_KEY_ENV))
