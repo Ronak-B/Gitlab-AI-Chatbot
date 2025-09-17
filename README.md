@@ -28,6 +28,7 @@ gitlab-ai-chatbot
 ### 1. Clone and Install
 ```bash
 git clone <repository-url>
+cd Gitlab-AI-Chatbot
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
