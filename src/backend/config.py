@@ -24,6 +24,19 @@ FOLLOWUP_QUESTIONS = [
     "Tell me about the CTO leadership team",
     "Employee benefits at gitlab",
     "What are the engineering initiatives at gitlab?",
+    "What are the areas of focus of security program",
+    "How does gitlab support professional development",
+    "What is the gitlab approach to incident management",
+    "How does gitlab ensure compliance with data privacy regulations",
+    "What is gitlab's approach to open source contributions",
+    "How does gitlab support mental health and well-being of employees",
+    "How does gitlab foster innovation within the company",
+    "How does gitlab handle performance reviews and feedback",
+    "What are the key metrics gitlab uses to measure success",
+    "How does gitlab support work-life balance for employees",
+    "How does gitlab ensure security of its products and services",
+    "How does gitlab support community engagement and social responsibility",
+    "What are the future plans and vision for gitlab",
 ]
 
 
