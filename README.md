@@ -1,7 +1,7 @@
 # GitLab AI Chatbot
 
 ## Overview
-The GitLab AI Chatbot is a generative AI application designed to retrieve and provide information from GitLab's Handbook and Direction pages. It uses a retrieval-augmented generation (RAG) pipeline with ChromaDB and sentence-transformers for semantic search, and Google Gemini for answer synthesis. The frontend is built using Streamlit for an interactive, user-friendly experience.
+The GitLab AI Chatbot is a generative AI application designed to retrieve and provide information from GitLab's Handbook and Direction pages. It uses a retrieval-augmented generation (RAG) pipeline with ChromaDB and sentence-transformers for semantic search, cross-encoder for reranking embeddings and Google Gemini for answer synthesis. The frontend is built using Streamlit for an interactive, user-friendly experience.
 
 ## Project Structure
 ```
