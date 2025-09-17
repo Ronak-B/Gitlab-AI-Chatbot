@@ -75,8 +75,9 @@ streamlit run app.py
 
 
 ## Screenshots
-
-*(Add screenshots or GIFs of the chat UI, feedback buttons, and error handling here)*
+![](https://github.com/Ronak-B/Gitlab-AI-Chatbot/blob/main/screenshots/img1.png)
+![](https://github.com/Ronak-B/Gitlab-AI-Chatbot/blob/main/screenshots/img2.png)
+![](https://github.com/Ronak-B/Gitlab-AI-Chatbot/blob/main/screenshots/img3.gif)
 
 ## Future Work
 - Future enhancements: smarter follow-ups, analytics dashboard, advanced moderation.
